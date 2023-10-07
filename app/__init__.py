@@ -9,7 +9,7 @@ from flask_babel import Babel
 from app.constants.locale import Locale
 from app.core.rbac import AllowApplyType, ApplicationCheckType
 from app.services.google_storage import GoogleStorage
-from app.services.oss import OSS
+from app.services.file_storage_service import create_file_storage_service
 from app.utils.logging import configure_logger, logger
 
 from .apis import register_apis
@@ -21,7 +21,7 @@ TMP_PATH = os.path.abspath(os.path.join(FILE_PATH, "tmp"))  # 临时文件存放
 STORAGE_PATH = os.path.abspath(os.path.join(APP_PATH, "..", "storage"))  # 储存地址
 # 插件
 babel = Babel()
-oss = OSS()
+oss = None
 gs_vision = GoogleStorage()
 apikit = APIKit()
 
@@ -129,6 +129,8 @@ def create_celery():
     # 为celery创建app
     app = Flask(__name__)
     app.config.from_envvar(config_path_env)  # 获取配置文件,仅从环境变量读取,均需要配置环境变量
+    global oss
+    oss = create_file_storage_service(app.config)
     # 通过app配置创建celery实例
     celery = Celery(
         app.name,
