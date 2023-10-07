@@ -1,4 +1,4 @@
-FROM python:3.8.13
+FROM python:3.10
 
 LABEL project="moeflow-backend"
 
@@ -6,4 +6,4 @@ COPY . /app
 WORKDIR /app
 EXPOSE 5000
 
-RUN pip install -r requirements.txt
+RUN pip install --no-deps -r requirements.txt
