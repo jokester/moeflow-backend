@@ -1,6 +1,3 @@
-"""
-对接阿里云OSS储存服务
-"""
 from io import BufferedReader, BytesIO
 import os
 import re
@@ -8,6 +5,7 @@ import shutil
 import time
 import hashlib
 from urllib import parse
+from typing import List, Union
 
 import oss2
 from oss2 import to_string
@@ -140,7 +138,7 @@ class OSS:
                     )
                 )
 
-    def delete(self, path, filename):
+    def delete(self, path, filename: Union[List[str], str]):
         """（批量）删除文件"""
         if self.storage_type == StorageType.OSS:
             # 如果给予列表，则批量删除
