@@ -1,26 +1,81 @@
+aliyun-python-sdk-core==2.14.0
+aliyun-python-sdk-core-v3==2.13.3
+aliyun-python-sdk-kms==2.16.2
+amqp==5.1.1
+appdirs==1.4.4
+attrs==23.1.0
+Babel==2.13.0
+billiard==3.6.4.0
+black==19.10b0
+cachetools==4.2.4
+celery==5.1.2
+certifi==2023.7.22
+cffi==1.16.0
+chardet==3.0.4
+Click==7.0
+click-didyoumean==0.3.0
+click-plugins==1.1.1
+click-repl==0.3.0
+coverage==7.3.2
+crcmod==1.7
+cryptography==41.0.4
+execnet==2.0.2
+flake8==3.8.4
 Flask==1.1.0
-Jinja2==3.0.3
-itsdangerous==2.0.1
-werkzeug==2.0.2
-flask-apikit==0.0.6
-gunicorn==20.0.4  # 生产环境服务器
-pytest==6.1.1  # 测试框架
-pytest-cov==2.7.1  # 测试覆盖率
-pytest-xdist==1.29.0  # 并发测试支持
-flake8==3.8.4  # 代码质量检测
-black==19.10b0  # 代码格式化
-flask-babel==1.0.0  # i18n
-mongoengine==0.20.0  # Mongo数据库
-mongomock==4.1.2
-Pillow==8.0.1  # 图片处理
-marshmallow==3.0.0b20  # 字段验证 (此版本兼容新版python, 但比Flask-APIKit依赖的版本略高, 暂时需要强行安装.)
-requests==2.22.0  # HTTP请求
-oss2==2.7.0  # 阿里云OSS
-celery==5.2.7  # 任务调度
-flower==0.9.5  # Celery监控
-redis==3.2.1  # Redis数据库
-chardet==3.0.4  # 文件编码预测
-aliyun-python-sdk-core-v3==2.13.3  # 用于签发阿里云pip
-click==7.0  # 命令行工具
-# aliyun-python-sdk-green==3.2.0  # 阿里云内容检测（暂时用不到）
+Flask-APIKit==0.0.6
+Flask-Babel==1.0.0
+flower==0.9.5
+google-api-core==2.10.2
+google-auth==1.35.0
+google-cloud-core==1.7.3
 google-cloud-storage==1.33.0
+google-crc32c==1.5.0
+google-resumable-media==1.3.3
+googleapis-common-protos==1.60.0
+gunicorn==20.0.4
+humanize==4.8.0
+idna==2.8
+iniconfig==2.0.0
+itsdangerous==2.0.1
+Jinja2==3.0.3
+jmespath==0.10.0
+kombu==5.3.2
+MarkupSafe==2.1.3
+marshmallow==3.0.0b20
+mccabe==0.6.1
+mongoengine==0.20.0
+mongomock==4.1.2
+oss2==2.7.0
+packaging==23.2
+pathspec==0.11.2
+Pillow==8.0.1
+pluggy==0.13.1
+prometheus-client==0.8.0
+prompt-toolkit==3.0.39
+protobuf==4.24.4
+py==1.11.0
+pyasn1==0.5.0
+pyasn1-modules==0.3.0
+pycodestyle==2.6.0
+pycparser==2.21
+pycryptodome==3.19.0
+pyflakes==2.2.0
+pymongo==3.13.0
+pytest==6.1.1
+pytest-cov==2.7.1
+pytest-forked==1.6.0
+pytest-xdist==1.29.0
+pytz==2023.3.post1
+redis==3.2.1
+regex==2023.10.3
+requests==2.22.0
+rsa==4.9
+sentinels==1.0.0
+six==1.16.0
+toml==0.10.2
+tornado==6.3.3
+typed-ast==1.5.5
+urllib3==1.25.11
+vine==5.0.0
+wcwidth==0.2.8
+Werkzeug==2.0.2
