@@ -9,11 +9,13 @@
 
 from __future__ import annotations
 from io import BufferedReader
+import asyncio
 import opendal
 from typing import Union
 
 from app.constants.storage import StorageType
-from oss import OSS
+from app.services.oss import OSS
+from .asyncio import wait_task
 
 
 def create_file_storage_service(config: dict[str, str]) -> Union[OpenDalStorageService, OSS]:
@@ -23,7 +25,7 @@ def create_file_storage_service(config: dict[str, str]) -> Union[OpenDalStorageS
         return OSS(config)
     elif config['STORAGE_TYPE'] == StorageType.GCS:
         url_builder = GcpUrlBuilder(config)
-        operator = opendal.Operator("gcs",
+        operator = opendal.AsyncOperator("gcs",
                                     bucket="moeflow-dev-assets",
                                     root="object-prefix",
                                     predefined_acl="publicRead")
@@ -37,13 +39,14 @@ class OpenDalStorageService():
     各种云存储服务的io
     """
 
-    def __init(self, url_builder: Union[GcpUrlBuilder], operator: opendal.Operator):
+    def __init__(self, url_builder: Union[GcpUrlBuilder], operator: opendal.AsyncOperator):
         self.url_builder = url_builder
         self.operator = operator
 
     def upload(self, path_prefix: str, filename: str, file: BufferedReader, headers: dict[str, str] = None):
         blob = file.read()
-        self.operator.write(path_prefix + filename, blob)
+        written = self.operator.write(path_prefix + filename, blob)
+        wait_task(written)
 
     def download(self, path_prefix: str, filename: str, ) -> BufferedReader:
         raise NotImplementedError("子类需要实现该方法")
@@ -52,6 +55,10 @@ class OpenDalStorageService():
         """检查文件是否存在"""
         raise NotImplementedError("子类需要实现该方法")
 
+    def sign_url(self, path_prefix: str, filename: str, expires: int = 3600, process_name: str = None) -> str:
+        """生成URL"""
+        return self.url_builder.sign_url(path_prefix, filename, expires=expires, process_name=process_name)
+
 
 class GcpUrlBuilder():
     """
@@ -59,4 +66,8 @@ class GcpUrlBuilder():
     """
 
     def __init__(self, options: dict[str, str]):
+        print(options)
         self.bucket_name = options['GCS_BUCKET_NAME']
+
+    def sign_url(self, path_prefix: str, filename: str, **kwargs) -> str:
+        return "https://wtf?prefix=%s&filename=%s" % (path_prefix, filename)
