@@ -29,3 +29,4 @@ click==7.0  # 命令行工具
 # aliyun-python-sdk-green==3.2.0  # 阿里云内容检测（暂时用不到）
 oss2==2.7.0  # 阿里云OSS # TODO: remove
 google-cloud-storage==1.33.0 # TODO: remove
+asgiref==3.7.2

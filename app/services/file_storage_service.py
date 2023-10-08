@@ -8,14 +8,16 @@
 """
 
 from __future__ import annotations
+
+import re
 from io import BufferedReader
-import asyncio
 import opendal
 from typing import Union
 
 from app.constants.storage import StorageType
 from app.services.oss import OSS
-from .asyncio import wait_task
+from asgiref.sync import async_to_sync
+from app.utils.logging import logger
 
 
 def create_file_storage_service(config: dict[str, str]) -> Union[OpenDalStorageService, OSS]:
@@ -25,13 +27,26 @@ def create_file_storage_service(config: dict[str, str]) -> Union[OpenDalStorageS
         return OSS(config)
     elif config['STORAGE_TYPE'] == StorageType.GCS:
         url_builder = GcpUrlBuilder(config)
+        service_account = read_key_file(config['GOOGLE_APPLICATION_CREDENTIALS'])
         operator = opendal.AsyncOperator("gcs",
-                                    bucket="moeflow-dev-assets",
-                                    root="object-prefix",
-                                    predefined_acl="publicRead")
+                                         bucket="moeflow-dev-assets",
+                                         root="object-prefix",
+                                         credential=service_account)
         return OpenDalStorageService(url_builder, operator)
     else:
         raise NotImplementedError("不支持的存储类型: %s" % config['STORAGE_TYPE'])
+
+
+def read_key_file(path_or_value: str) -> str:
+    # if it does not look like a path, skip the attempt
+    if not re.match("^[\\w/.]", path_or_value):
+        return path_or_value
+    try:
+        with open(path_or_value, "r") as f:
+            return f.read()
+    except FileNotFoundError:
+        logger.info("failed to read key file: %s..." % path_or_value[:5])
+        return path_or_value
 
 
 class OpenDalStorageService():
@@ -43,10 +58,10 @@ class OpenDalStorageService():
         self.url_builder = url_builder
         self.operator = operator
 
-    def upload(self, path_prefix: str, filename: str, file: BufferedReader, headers: dict[str, str] = None):
+    @async_to_sync
+    async def upload(self, path_prefix: str, filename: str, file: BufferedReader, headers: dict[str, str] = None):
         blob = file.read()
-        written = self.operator.write(path_prefix + filename, blob)
-        wait_task(written)
+        await self.operator.write(path_prefix + filename, blob)
 
     def download(self, path_prefix: str, filename: str, ) -> BufferedReader:
         raise NotImplementedError("子类需要实现该方法")

@@ -3,6 +3,7 @@ aliyun-python-sdk-core-v3==2.13.3
 aliyun-python-sdk-kms==2.16.2
 amqp==5.2.0
 appdirs==1.4.4
+asgiref==3.7.2
 attrs==23.1.0
 Babel==2.14.0
 billiard==3.6.4.0
@@ -50,6 +51,7 @@ oss2==2.7.0
 packaging==23.2
 pathspec==0.12.1
 Pillow==8.0.1
+pipdeptree==2.13.0
 pluggy==0.13.1
 prometheus-client==0.8.0
 prompt-toolkit==3.0.43
