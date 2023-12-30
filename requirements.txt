@@ -46,7 +46,7 @@ marshmallow==3.0.0b20
 mccabe==0.6.1
 mongoengine==0.20.0
 mongomock==4.1.2
-opendal==0.40.0
+opendal==0.43.0
 oss2==2.7.0
 packaging==23.2
 pathspec==0.12.1
