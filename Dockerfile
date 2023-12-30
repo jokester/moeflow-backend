@@ -6,4 +6,4 @@ COPY . /app
 WORKDIR /app
 EXPOSE 5000
 
-RUN pip install --no-deps -r requirements.txt
+RUN pip install -r requirements.txt
