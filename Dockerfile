@@ -2,8 +2,9 @@ FROM python:3.10
 
 LABEL project="moeflow-backend"
 
-COPY . /app
+COPY ./requirements.txt /app/requirements.txt
 WORKDIR /app
 EXPOSE 5000
+RUN pip install --no-deps -r /app/requirements.txt
 
-RUN pip install -r requirements.txt
+COPY . /app
