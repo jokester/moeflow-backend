@@ -10,7 +10,7 @@ from app.constants.locale import Locale
 from app.core.rbac import AllowApplyType, ApplicationCheckType
 from app.services.google_storage import GoogleStorage
 from app.utils.logging import configure_logger, logger
-from .services.file_storage_service import create_file_storage_service
+from .services.oss import OSS
 
 from .apis import register_apis
 
@@ -21,7 +21,7 @@ TMP_PATH = os.path.abspath(os.path.join(FILE_PATH, "tmp"))  # 临时文件存放
 STORAGE_PATH = os.path.abspath(os.path.join(APP_PATH, "..", "storage"))  # 储存地址
 # 插件
 babel = Babel()
-oss = None
+oss = OSS()
 gs_vision = GoogleStorage()
 apikit = APIKit()
 
@@ -103,8 +103,7 @@ def create_app():
 
     logger.info("-" * 50)
     logger.info("站点支持语言: " + str([str(i) for i in babel.list_translations()]))
-    global oss
-    oss = create_file_storage_service(app.config)
+    oss.init(app.config)
 
     admin_user = create_or_override_default_admin(app)
     create_default_team(admin_user)
@@ -125,13 +124,11 @@ def delete_about_to_shutdown_flag():
         pass
 
 
-def create_celery():
+def create_celery() -> Celery:
     delete_about_to_shutdown_flag()
     # 为celery创建app
     app = Flask(__name__)
     app.config.from_envvar(config_path_env)  # 获取配置文件,仅从环境变量读取,均需要配置环境变量
-    global oss
-    oss = create_file_storage_service(app.config)
     # 通过app配置创建celery实例
     celery = Celery(
         app.name,
