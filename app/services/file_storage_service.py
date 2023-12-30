@@ -10,22 +10,22 @@
 from __future__ import annotations
 
 import re
-from io import BufferedReader
+import io
+import werkzeug
 import opendal
-from typing import Union
+from typing import Union, Optional, List
 
 from app.constants.storage import StorageType
-from app.services.oss import OSS
 from asgiref.sync import async_to_sync
 from app.utils.logging import logger
+from .file_storage_abstract import AbstractStorageService
 
 
-def create_file_storage_service(config: dict[str, str]) -> Union[OpenDalStorageService, OSS]:
-    if config['STORAGE_TYPE'] == StorageType.LOCAL_STORAGE:
-        return OSS(config)
-    elif config['STORAGE_TYPE'] == StorageType.OSS:
-        return OSS(config)
-    elif config['STORAGE_TYPE'] == StorageType.GCS:
+def create_opendal_storage_service(config: dict[str, str]) -> OpenDalStorageService:
+    if config['STORAGE_TYPE'] != StorageType.OPENDAL:
+        raise Exception("unexpected STORAGE_TYPE")
+
+    if config['STORAGE_PROVIDER'] == 'GCS':
         url_builder = GcpUrlBuilder(config)
         service_account = read_key_file(config['GOOGLE_APPLICATION_CREDENTIALS'])
         operator = opendal.AsyncOperator("gcs",
@@ -33,8 +33,8 @@ def create_file_storage_service(config: dict[str, str]) -> Union[OpenDalStorageS
                                          root="object-prefix",
                                          credential=service_account)
         return OpenDalStorageService(url_builder, operator)
-    else:
-        raise NotImplementedError("不支持的存储类型: %s" % config['STORAGE_TYPE'])
+
+    raise Exception("unsupported STORAGE_PROVIDER")
 
 
 def read_key_file(path_or_value: str) -> str:
@@ -49,7 +49,7 @@ def read_key_file(path_or_value: str) -> str:
         return path_or_value
 
 
-class OpenDalStorageService():
+class OpenDalStorageService(AbstractStorageService):
     """
     各种云存储服务的io
     """
@@ -58,24 +58,42 @@ class OpenDalStorageService():
         self.url_builder = url_builder
         self.operator = operator
 
-    @async_to_sync
-    async def upload(self, path_prefix: str, filename: str, file: BufferedReader, headers: dict[str, str] = None):
-        blob = file.read()
-        await self.operator.write(path_prefix + filename, blob)
+    def upload(self, path: str, filename: str,
+               file: io.BufferedReader | werkzeug.wrappers.request.FileStorage | str,
+               headers: Optional[dict[str, int | str]] = None, progress_callback=None) -> None:
+        self._sync_upload(path, filename, file, headers or {})
 
-    def download(self, path_prefix: str, filename: str, ) -> BufferedReader:
+    @async_to_sync
+    async def _sync_upload(self, path: str, filename: str,
+                           file: io.BufferedReader | werkzeug.wrappers.request.FileStorage | str,
+                           headers: dict[str, int | str]):
+        blob = file.read()
+        await self.operator.write(path + filename, blob, content_type=headers.get("content_type"))
+
+    def download(self, path, filename, /, *, local_path=None) -> Optional[io.BytesIO]:
+        raise NotImplementedError("子类需要实现该方法")
+
+    def download_to_file(self, path: str, filename: str, local_path: str) -> io.BytesIO:
+        """下载文件"""
         raise NotImplementedError("子类需要实现该方法")
 
     def is_exist(self, path, filename, process_name=None):
         """检查文件是否存在"""
         raise NotImplementedError("子类需要实现该方法")
 
+    def delete(self, path: str, filename: Union[List[str], str]):
+        self._sync_delete(path, filename)
+
+    @async_to_sync
+    async def _sync_delete(self, path: str, filename: Union[List[str], str]):
+        pass
+
     def sign_url(self, path_prefix: str, filename: str, expires: int = 3600, process_name: str = None) -> str:
         """生成URL"""
         return self.url_builder.sign_url(path_prefix, filename, expires=expires, process_name=process_name)
 
 
-class GcpUrlBuilder():
+class GcpUrlBuilder:
     """
     GCP Cloud Storage的URL生成
     """
