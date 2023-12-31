@@ -91,7 +91,7 @@ class OpenDalStorageService(AbstractStorageService):
 
     def sign_url(self, path_prefix: str, filename: str, expires: int = 3600, process_name: str = None) -> str:
         """生成URL"""
-        return self.url_builder.sign_url(path_prefix, filename, expires=expires, process_name=process_name)
+        return self.url_builder.create_public_url(path_prefix, filename, expires=expires, process_name=process_name)
 
 
 class GcpUrlBuilder:
@@ -100,8 +100,7 @@ class GcpUrlBuilder:
     """
 
     def __init__(self, options: dict[str, str]):
-        print(options)
         self.bucket_name = options['OPENDAL_GCS_BUCKET']
 
-    def sign_url(self, path_prefix: str, filename: str, **kwargs) -> str:
-        return "https://wtf?prefix=%s&filename=%s" % (path_prefix, filename)
+    def create_public_url(self, path_prefix: str, filename: str, /, **kwargs) -> str:
+        return f"https://storage.cloud.google.com/{self.bucket_name}/{path_prefix}{filename}"
