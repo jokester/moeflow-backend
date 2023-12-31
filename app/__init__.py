@@ -9,8 +9,8 @@ from flask_babel import Babel
 from app.constants.locale import Locale
 from app.core.rbac import AllowApplyType, ApplicationCheckType
 from app.services.google_storage import GoogleStorage
+from app.services.oss import OSS
 from app.utils.logging import configure_logger, logger
-from .services.oss import OSS
 
 from .apis import register_apis
 
@@ -103,7 +103,7 @@ def create_app():
 
     logger.info("-" * 50)
     logger.info("站点支持语言: " + str([str(i) for i in babel.list_translations()]))
-    oss.init(app.config)
+    oss.init(app.config)  # 文件储存
 
     admin_user = create_or_override_default_admin(app)
     create_default_team(admin_user)
