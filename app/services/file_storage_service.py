@@ -98,9 +98,15 @@ class OpenDalStorageService(AbstractStorageService):
         with open(local_path, "wb") as f:
             f.write(bytes(blob))
 
-    def is_exist(self, path, filename, process_name=None):
+    def is_exist(self, path, filename, process_name=None) -> bool:
         """检查文件是否存在"""
-        raise NotImplementedError("子类需要实现该方法")
+        return self._is_exist(path, filename)
+
+    @async_to_sync
+    async def _is_exist(self, path, filename):
+        metadata = await self.operator.stat(path + filename)
+        # FIXME
+        return True
 
     def delete(self, path_prefix: str, filename: List[str] | str):
         self._sync_delete(path_prefix, filename)

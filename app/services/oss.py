@@ -138,11 +138,11 @@ class OSS(AbstractStorageService):
         else:
             raise Exception("unsupported STORAGE_TYPE")
 
-    def is_exist(self, path: str, filename: str, process_name: Optional[str] = None):
+    def is_exist(self, path: str, filename: str, process_name: Optional[str] = None) -> bool:
         """检查文件是否存在"""
         if self.storage_type == StorageType.OSS:
             return self.bucket.object_exists(path + filename)
-        else:
+        elif self.storage_type == StorageType.LOCAL_STORAGE:
             if os.path.isabs(path):
                 return os.path.isfile(
                     os.path.join(
@@ -160,6 +160,10 @@ class OSS(AbstractStorageService):
                         + filename,
                     )
                 )
+        elif self.storage_type == StorageType.OPENDAL:
+            return self.delegated_impl.is_exist(path, filename, process_name)
+        else:
+            raise Exception("unsupported STORAGE_TYPE")
 
     def delete(self, path: str, filename: Union[List[str], str]):
         """（批量）删除文件"""
