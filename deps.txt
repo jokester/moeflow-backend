@@ -30,5 +30,5 @@ click==7.0  # 命令行工具
 oss2==2.7.0  # 阿里云OSS # TODO: remove
 google-cloud-storage==1.33.0 # TODO: remove
 asgiref==3.7.2
-opendal==0.43.0
+opendal==0.44.0
 pipdeptree==2.13.0
