@@ -9,13 +9,12 @@
 
 from __future__ import annotations
 
-import re
 import io
 import werkzeug
 import opendal
 from typing import Union, Optional, List
 
-from app.constants.storage import StorageType
+from app.constants.storage import StorageType, OpendalStorageService
 from asgiref.sync import async_to_sync
 from app.utils.logging import logger
 from .file_storage_abstract import AbstractStorageService
@@ -25,28 +24,20 @@ def create_opendal_storage_service(config: dict[str, str]) -> OpenDalStorageServ
     if config['STORAGE_TYPE'] != StorageType.OPENDAL:
         raise Exception("unexpected STORAGE_TYPE")
 
-    if config['STORAGE_PROVIDER'] == 'GCS':
+    if config.get('OPENDAL_SERVICE') == OpendalStorageService.GCS:
         url_builder = GcpUrlBuilder(config)
-        service_account = read_key_file(config['GOOGLE_APPLICATION_CREDENTIALS'])
+
         operator = opendal.AsyncOperator("gcs",
-                                         bucket="moeflow-dev-assets",
-                                         root="object-prefix",
-                                         credential=service_account)
+                                         bucket=config['OPENDAL_GCS_BUCKET'],
+                                         root="/")
         return OpenDalStorageService(url_builder, operator)
 
-    raise Exception("unsupported STORAGE_PROVIDER")
+    raise Exception("unsupported STORAGE_PROVIDER: {0}".format(config.get('OPENDAL_SERVICE')))
 
 
 def read_key_file(path_or_value: str) -> str:
-    # if it does not look like a path, skip the attempt
-    if not re.match("^[\\w/.]", path_or_value):
-        return path_or_value
-    try:
-        with open(path_or_value, "r") as f:
-            return f.read()
-    except FileNotFoundError:
-        logger.info("failed to read key file: %s..." % path_or_value[:5])
-        return path_or_value
+    with open(path_or_value, "r") as f:
+        return f.read()
 
 
 class OpenDalStorageService(AbstractStorageService):
@@ -54,7 +45,7 @@ class OpenDalStorageService(AbstractStorageService):
     各种云存储服务的io
     """
 
-    def __init__(self, url_builder: Union[GcpUrlBuilder], operator: opendal.AsyncOperator):
+    def __init__(self, url_builder: GcpUrlBuilder, operator: opendal.AsyncOperator):
         self.url_builder = url_builder
         self.operator = operator
 
@@ -67,11 +58,21 @@ class OpenDalStorageService(AbstractStorageService):
     async def _sync_upload(self, path: str, filename: str,
                            file: io.BufferedReader | werkzeug.wrappers.request.FileStorage | str,
                            headers: dict[str, int | str]):
-        blob = file.read()
-        await self.operator.write(path + filename, blob, content_type=headers.get("content_type"))
+        blob: bytes = file.encode() if isinstance(file, str) else file.read()
+        write_kwargs = {
+            k: headers[k]
+            for k in ['content_type']
+            if k in headers
+        }
+        await self.operator.write(path + filename, blob, **write_kwargs)
 
-    def download(self, path, filename, /, *, local_path=None) -> Optional[io.BytesIO]:
+    def download(self, path: str, filename: str, /, *, local_path=None) -> Optional[io.BytesIO]:
+        downloaded: memoryview = self._sync_download(path, filename)
         raise NotImplementedError("子类需要实现该方法")
+
+    @async_to_sync
+    async def _sync_download(self, path: str, filename: str):
+        return await self.operator.read("{0}/{1}".format(path, filename))
 
     def download_to_file(self, path: str, filename: str, local_path: str) -> io.BytesIO:
         """下载文件"""
@@ -100,7 +101,7 @@ class GcpUrlBuilder:
 
     def __init__(self, options: dict[str, str]):
         print(options)
-        self.bucket_name = options['GCS_BUCKET_NAME']
+        self.bucket_name = options['OPENDAL_GCS_BUCKET']
 
     def sign_url(self, path_prefix: str, filename: str, **kwargs) -> str:
         return "https://wtf?prefix=%s&filename=%s" % (path_prefix, filename)

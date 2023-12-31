@@ -85,7 +85,7 @@ class OSS(AbstractStorageService):
         elif self.storage_type == StorageType.OPENDAL:
             self.delegated_impl = create_opendal_storage_service(config)
         else:
-            raise Exception("unsupported STORAGE_TYPE")
+            raise NotImplemented('unsupported STORAGE_TYPE: {0}'.format(self.storage_type))
 
     def upload(self, path: str, filename: str,
                file: io.BufferedReader | werkzeug.wrappers.request.FileStorage | str,
@@ -111,6 +111,8 @@ class OSS(AbstractStorageService):
                 file.save(os.path.join(folder_path, filename))
         elif self.storage_type == StorageType.OPENDAL:
             self.delegated_impl.upload(path, filename, file, headers, progress_callback)
+        else:
+            raise Exception("unsupported STORAGE_TYPE")
 
     def download(self, path: str, filename: str, /, *, local_path: Optional[str] = None) -> Optional[io.BytesIO]:
         """下载文件"""
@@ -136,6 +138,8 @@ class OSS(AbstractStorageService):
                 self.delegated_impl.download_to_file(path, filename, local_path)
             else:
                 return self.delegated_impl.download(path, filename)
+        else:
+            raise Exception("unsupported STORAGE_TYPE")
 
     def is_exist(self, path: str, filename: str, process_name: Optional[str] = None):
         """检查文件是否存在"""
@@ -185,6 +189,8 @@ class OSS(AbstractStorageService):
                     os.remove(os.path.join(folder_path, filename))
         elif self.storage_type == StorageType.OPENDAL:
             self.delegated_impl.delete(path, filename)
+        else:
+            raise Exception("unsupported STORAGE_TYPE")
 
     def rmdir(self, path: Union[str, List[str]]):
         """（批量）删除文件夹，仅本地储存"""
