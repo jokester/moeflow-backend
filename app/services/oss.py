@@ -46,7 +46,7 @@ class OSS(AbstractStorageService):
     def __init__(self, config=None):
         # exists for all storage types
         self.storage_type = None
-        self.oss_domain: Optional[None] = None # URL prefix for (asset URL for clients)
+        self.oss_domain: Optional[None] = None  # URL prefix for (asset URL for clients)
         # only exists for OSS
         self.auth: Optional[oss2.Auth] = None
         self.bucket: Optional[oss2.Bucket] = None
@@ -134,10 +134,7 @@ class OSS(AbstractStorageService):
                 with open(file_path, "rb") as file:
                     return io.BytesIO(file.read())
         elif self.storage_type == StorageType.OPENDAL:
-            if local_path:
-                self.delegated_impl.download_to_file(path, filename, local_path)
-            else:
-                return self.delegated_impl.download(path, filename)
+            return self.delegated_impl.download(path, filename, local_path=local_path)
         else:
             raise Exception("unsupported STORAGE_TYPE")
 
@@ -214,8 +211,10 @@ class OSS(AbstractStorageService):
                 return self._sign_oss_url(*args, **kwargs)
         elif self.storage_type == StorageType.LOCAL_STORAGE:
             return self._sign_local_url(*args, **kwargs)
-        else:
+        elif self.storage_type == StorageType.OPENDAL:
             return self.delegated_impl.sign_url(*args, **kwargs)
+        else:
+            raise Exception("unsupported STORAGE_TYPE")
 
     def _sign_local_url(
         self,

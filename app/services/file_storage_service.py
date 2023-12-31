@@ -81,16 +81,22 @@ class OpenDalStorageService(AbstractStorageService):
         await self.operator.write(path + filename, blob, **write_kwargs)
 
     def download(self, path: str, filename: str, /, *, local_path=None) -> Optional[io.BytesIO]:
-        downloaded: memoryview = self._sync_download(path, filename)
-        raise NotImplementedError("子类需要实现该方法")
+        """下载文件"""
+        if local_path:
+            self._download_to_file(path, filename, local_path)
+        else:
+            downloaded: memoryview = self._download_to_memory(path, filename)
+            return io.BytesIO(downloaded)
 
     @async_to_sync
-    async def _sync_download(self, path: str, filename: str):
+    async def _download_to_memory(self, path: str, filename: str):
         return await self.operator.read("{0}/{1}".format(path, filename))
 
-    def download_to_file(self, path: str, filename: str, local_path: str) -> io.BytesIO:
-        """下载文件"""
-        raise NotImplementedError("子类需要实现该方法")
+    @async_to_sync
+    async def _download_to_file(self, path: str, filename: str, local_path: str):
+        blob = await self.operator.read("{0}/{1}".format(path, filename))
+        with open(local_path, "wb") as f:
+            f.write(bytes(blob))
 
     def is_exist(self, path, filename, process_name=None):
         """检查文件是否存在"""
