@@ -9,9 +9,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import werkzeug
 import opendal
+import mimetypes
 from typing import Union, Optional, List
 
 from app.constants.storage import StorageType, OpendalStorageService
@@ -59,11 +61,23 @@ class OpenDalStorageService(AbstractStorageService):
                            file: io.BufferedReader | werkzeug.wrappers.request.FileStorage | str,
                            headers: dict[str, int | str]):
         blob: bytes = file.encode() if isinstance(file, str) else file.read()
-        write_kwargs = {
-            k: headers[k]
-            for k in ['content_type']
-            if k in headers
+
+        aliased_headers = {
+            'content_type': 'Content-Type',
+            'cache_control': 'Cache-Control',
+            'content_disposition': 'Content-Disposition',
         }
+        write_kwargs = {
+            k1: headers.get(k1) or headers.get(k2)
+            for (k1, k2) in aliased_headers.items()
+            if (k1 in headers) or (k2 in headers)
+        }
+        if "content_type" not in write_kwargs:
+            guessed_type, guessed_encoding = mimetypes.guess_type(filename)
+            if guessed_type:
+                write_kwargs['content_type'] = guessed_type
+        if "cache_control" not in write_kwargs:
+            write_kwargs["cache_control"] = "private, max-age=31536000, must-revalidate"
         await self.operator.write(path + filename, blob, **write_kwargs)
 
     def download(self, path: str, filename: str, /, *, local_path=None) -> Optional[io.BytesIO]:
@@ -82,12 +96,15 @@ class OpenDalStorageService(AbstractStorageService):
         """检查文件是否存在"""
         raise NotImplementedError("子类需要实现该方法")
 
-    def delete(self, path: str, filename: Union[List[str], str]):
-        self._sync_delete(path, filename)
+    def delete(self, path_prefix: str, filename: List[str] | str):
+        self._sync_delete(path_prefix, filename)
 
     @async_to_sync
-    async def _sync_delete(self, path: str, filename: Union[List[str], str]):
-        pass
+    async def _sync_delete(self, path_prefix: str, filename: List[str] | str):
+        targets = filename if isinstance(filename, list) else [filename]
+        await asyncio.gather(
+            *[self.operator.delete(path_prefix + t) for t in targets]
+        )
 
     def sign_url(self, path_prefix: str, filename: str, expires: int = 3600, process_name: str = None) -> str:
         """生成URL"""
