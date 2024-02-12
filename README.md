@@ -7,8 +7,8 @@
 roadmap:
 
 - [x] 升级到Python 3.10 [PR](https://github.com/jokester/moeflow-backend/pull/1)
-- [ ] 加一个基于opendal的文件存储后端 [PR](#)
-- [ ] 加些翻译辅助功能
+- [ ] 加一个基于opendal的文件存储后端 [WIP PR](https://github.com/jokester/moeflow-backend/pull/4)
+- [ ] 加些翻译辅助功能 // 目前在别处实验
 
 以下为上游README。
 
