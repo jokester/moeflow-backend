@@ -6,7 +6,7 @@
 
 roadmap:
 
-- [ ] 升级到Python 3.10 [PR]()
+- [x] 升级到Python 3.10 [PR](https://github.com/jokester/moeflow-backend/pull/1)
 - [ ] 加一个基于opendal的文件存储后端 [PR](#)
 - [ ] 加些翻译辅助功能
 
